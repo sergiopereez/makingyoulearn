@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Making You Learn Publisher</title>
+<meta name="description" content="Post your finished short videos to TikTok.">
+<link rel="stylesheet" href="../style.css">
+<style>
+  main{max-width:760px}
+  .card{background:rgba(127,127,127,.08);border-radius:14px;padding:20px;margin:18px 0}
+  .creator{display:flex;align-items:center;gap:14px}
+  .creator img{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#ddd}
+  label{display:block;font-weight:600;margin:16px 0 6px}
+  input[type=text],textarea,select{width:100%;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.45);background:transparent;color:inherit}
+  textarea{min-height:120px}
+  .row{display:flex;gap:22px;flex-wrap:wrap}
+  .row label{font-weight:400;margin:6px 0;display:flex;gap:8px;align-items:center}
+  .muted{color:var(--muted);font-size:.92rem}
+  .btn{display:inline-block;background:var(--red);color:#fff;border:0;border-radius:999px;padding:12px 22px;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--red);border:2px solid var(--red)}
+  video{width:100%;max-width:300px;border-radius:12px;background:#000;display:block;margin-top:10px}
+  .notice{border-left:4px solid var(--red);padding:8px 12px;margin:10px 0}
+  .hidden{display:none}
+  #log{font:14px/1.5 ui-monospace,monospace;white-space:pre-wrap}
+  .switch{display:flex;align-items:center;gap:10px;font-weight:600;margin-top:16px}
+  .sub{margin-left:28px}
+</style>
+</head>
+<body><main>
+<h1>Making You <span>Learn</span> Publisher</h1>
+<p class="lead">Post your finished short videos to your TikTok account.</p>
+
+<section id="login" class="card">
+  <p>Connect your TikTok account to post a video. We only ask for the permissions needed to show who is posting and to publish the video you choose.</p>
+  <button class="btn" id="loginBtn">Continue with TikTok</button>
+  <p class="muted">See our <a href="../privacy.html">Privacy Policy</a> and <a href="../terms.html">Terms of Service</a>.</p>
+</section>
+
+<section id="composer" class="hidden">
+  <div class="card creator">
+    <img id="avatar" alt="">
+    <div><div>Posting to TikTok as <b id="nickname"></b></div>
+    <div class="muted">@<span id="username"></span> · <a href="#" id="logout">Switch account</a></div></div>
+  </div>
+
+  <div id="blocked" class="card notice hidden"></div>
+
+  <form id="form" class="card">
+    <label for="file">Video</label>
+    <input type="file" id="file" accept="video/mp4,video/quicktime,video/webm" required>
+    <div class="muted" id="duration"></div>
+    <video id="preview" controls playsinline class="hidden"></video>
+
+    <label for="title">Caption</label>
+    <textarea id="title" maxlength="2200" placeholder="Write a caption, #hashtags…"></textarea>
+
+    <label for="privacy">Who can view this video</label>
+    <select id="privacy" required><option value="" selected disabled>Select privacy</option></select>
+
+    <label>Allow users to</label>
+    <div class="row">
+      <label><input type="checkbox" id="comment"> Comment</label>
+      <label><input type="checkbox" id="duet"> Duet</label>
+      <label><input type="checkbox" id="stitch"> Stitch</label>
+    </div>
+
+    <label class="switch"><input type="checkbox" id="disclose"> Disclose video content</label>
+    <div class="muted sub">Turn on to disclose that this video promotes goods or services in exchange for something of value.</div>
+    <div id="discloseBox" class="sub hidden">
+      <label><input type="checkbox" id="yourBrand"> Your brand</label>
+      <div class="muted">You are promoting yourself or your own business.</div>
+      <label><input type="checkbox" id="branded"> Branded content</label>
+      <div class="muted">You are promoting another brand or a third party.</div>
+      <div id="discloseLabel" class="notice hidden"></div>
+    </div>
+
+    <p class="muted" id="consent">By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener">Music Usage Confirmation</a>.</p>
+    <button class="btn" id="postBtn" type="submit" disabled>Post to TikTok</button>
+  </form>
+
+  <section id="progress" class="card hidden">
+    <b>Status</b>
+    <div id="log"></div>
+  </section>
+</section>
+
+<footer>Making You Learn · <a href="../">Home</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a></footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
