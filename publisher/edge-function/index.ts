@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
   if (action === "status") return tt("post/publish/status/fetch/", token, await req.json());
   if (action === "upload") {
     const target = req.headers.get("x-upload-url") ?? "";
-    if (!target.startsWith("https://open-upload.tiktokapis.com/")) return json({ error: "bad upload url" }, 400);
     const bytes = new Uint8Array(await req.arrayBuffer());
+    if (!/^https:\/\/open-upload[a-z0-9-]*\.tiktokapis\.com\//.test(target)) return json({ error: "bad upload url" }, 400);
     const r = await fetch(target, {
       method: "PUT",
       headers: { "Content-Type": "video/mp4", "Content-Range": req.headers.get("content-range") ?? "" },
