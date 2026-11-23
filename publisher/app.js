@@ -30,7 +30,7 @@ $("loginBtn").onclick = async () => {
   sessionStorage.setItem("tt_state", state);
   const q = new URLSearchParams({
     client_key: cfg.client_key, response_type: "code", state,
-    scope: "user.info.basic,video.publish", redirect_uri: cfg.redirect_uri,
+    scope: "user.info.basic,video.publish,video.upload", redirect_uri: cfg.redirect_uri,
   });
   location.href = "https://www.tiktok.com/v2/auth/authorize/?" + q;
 };
@@ -119,6 +119,7 @@ function validate() {
   const ok = $("file").files[0] && videoSeconds > 0 && videoSeconds <= creator.max_video_post_duration_sec
     && $("privacy").value && (!disclose || yours || branded);
   $("postBtn").disabled = !ok;
+  $("draftBtn").disabled = !($("file").files[0] && videoSeconds > 0);
   $("postBtn").title = disclose && !yours && !branded ? "You need to indicate if your content promotes yourself, a third party, or both." : "";
 }
 ["privacy", "disclose", "yourBrand", "branded"].forEach((id) => $(id).addEventListener("change", validate));
@@ -129,8 +130,7 @@ $("form").onsubmit = async (e) => {
   $("postBtn").disabled = true;
   const f = $("file").files[0];
   const size = f.size;
-  const chunk = size <= 10_000_000 ? size : 10_000_000;
-  const count = size <= 10_000_000 ? 1 : Math.floor(size / chunk);
+  const [chunk, count] = plan(size);
   const post = {
     title: $("title").value,
     privacy_level: $("privacy").value,
@@ -143,22 +143,47 @@ $("form").onsubmit = async (e) => {
   log("Sending your video to TikTok…");
   const init = await call("init", { post_info: post, source_info: { source: "FILE_UPLOAD", video_size: size, chunk_size: chunk, total_chunk_count: count } });
   if (init.error && init.error.code !== "ok") { log("TikTok refused the post: " + init.error.message); $("postBtn").disabled = false; return; }
-  const { publish_id, upload_url } = init.data;
+  const { publish_id } = init.data;
+  if (!(await uploadFile(f, init.data.upload_url, chunk, count))) return;
+  log("Upload complete. TikTok is processing your video; it can take a few minutes to appear on your profile.");
+  await waitFor(publish_id);
+};
+
+async function uploadFile(f, upload_url, chunk, count) {
+  const size = f.size;
   for (let i = 0; i < count; i++) {
     const start = i * chunk, end = i === count - 1 ? size - 1 : start + chunk - 1;
     const r = await call("upload", f.slice(start, end + 1), { "x-upload-url": upload_url, "content-range": `bytes ${start}-${end}/${size}` });
-    if (r.status >= 300) { log("Upload failed: " + r.body); return; }
+    if (r.status >= 300) { log("Upload failed: " + r.body); return false; }
     log(`Uploaded ${Math.round(((end + 1) / size) * 100)}%`);
   }
-  log("Upload complete. TikTok is processing your video; it can take a few minutes to appear on your profile.");
+  return true;
+}
+
+const plan = (size) => size <= 10_000_000 ? [size, 1] : [10_000_000, Math.floor(size / 10_000_000)];
+
+async function waitFor(publish_id) {
   for (let i = 0; i < 60; i++) {
     await new Promise((res) => setTimeout(res, 5000));
     const st = await call("status", { publish_id });
     const s = st.data && st.data.status;
     if (s === "PUBLISH_COMPLETE") { log("Posted! It's now on your TikTok profile."); return; }
+    if (s === "SEND_TO_USER_INBOX") { log("Sent! Open the notification in your TikTok app (Inbox) to edit and post it."); return; }
     if (s === "FAILED") { log("TikTok could not post the video: " + st.data.fail_reason); return; }
   }
-  log("Still processing. Check your TikTok profile in a few minutes.");
+  log("Still processing. Check TikTok in a few minutes.");
+}
+
+$("draftBtn").onclick = async () => {
+  $("draftBtn").disabled = true;
+  const f = $("file").files[0];
+  const [chunk, count] = plan(f.size);
+  log("Sending your video to your TikTok inbox…");
+  const init = await call("inbox", { source_info: { source: "FILE_UPLOAD", video_size: f.size, chunk_size: chunk, total_chunk_count: count } });
+  if (init.error && init.error.code !== "ok") { log("TikTok refused the upload: " + init.error.message); $("draftBtn").disabled = false; return; }
+  if (!(await uploadFile(f, init.data.upload_url, chunk, count))) return;
+  log("Upload complete. TikTok is processing it.");
+  await waitFor(init.data.publish_id);
 };
 
 (async () => {

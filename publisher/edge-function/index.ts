@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
   }
   if (action === "creator_info") return tt("post/publish/creator_info/query/", token, {});
   if (action === "init") return tt("post/publish/video/init/", token, await req.json());
+  if (action === "inbox") return tt("post/publish/inbox/video/init/", token, await req.json());
   if (action === "status") return tt("post/publish/status/fetch/", token, await req.json());
   if (action === "upload") {
     const target = req.headers.get("x-upload-url") ?? "";
